@@ -16,15 +16,15 @@ class CacheService:
 
     def get(self, key: str) -> Any | None:
         self._cleanup_expired()
-        
+
         entry = self._store.get(key)
         if entry is None:
             return None
-        
+
         if time.time() > entry.expires_at:
             del self._store[key]
             return None
-        
+
         return entry.value
 
     def set(self, key: str, value: Any, ttl: int | None = None) -> None:
@@ -43,7 +43,7 @@ class CacheService:
     def _cleanup_expired(self) -> None:
         current_time = time.time()
         expired_keys = [
-            key for key, entry in self._store.items() 
+            key for key, entry in self._store.items()
             if current_time > entry.expires_at
         ]
         for key in expired_keys:
@@ -57,3 +57,4 @@ class CacheService:
 cache = CacheService()
 whois_cache = CacheService(default_ttl=3600)
 ssl_cache = CacheService(default_ttl=300)
+virustotal_cache = CacheService(default_ttl=900)

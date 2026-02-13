@@ -25,6 +25,14 @@ class Settings(BaseSettings):
     cache_ttl_whois: int = 3600
     cache_ttl_ssl: int = 300
 
+    virustotal_api_key: str = ""
+    virustotal_timeout: int = 10
+    cache_ttl_virustotal: int = 900
+
+    @property
+    def virustotal_enabled(self) -> bool:
+        return bool(self.virustotal_api_key)
+
     @property
     def cors_origins(self) -> list[str]:
         return [origin.strip() for origin in self.cors_origins_str.split(",") if origin.strip()]

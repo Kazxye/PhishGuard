@@ -55,6 +55,19 @@ export interface FormAnalysis {
   score: number;
 }
 
+export interface VirusTotalAnalysis {
+  available: boolean;
+  malicious: number;
+  suspicious: number;
+  harmless: number;
+  undetected: number;
+  total_engines: number;
+  detection_rate: number;
+  permalink: string | null;
+  flagged_engines: string[];
+  score: number;
+}
+
 export interface AnalysisResult {
   url: string;
   domain: string;
@@ -65,6 +78,7 @@ export interface AnalysisResult {
   ssl: SSLAnalysis;
   brand_similarity: BrandSimilarityAnalysis;
   form_analysis: FormAnalysis | null;
+  virustotal: VirusTotalAnalysis | null;
   analyzed_at: string;
   recommendations: string[];
 }

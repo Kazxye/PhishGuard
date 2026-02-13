@@ -57,6 +57,19 @@ class FormAnalysis(BaseModel):
     score: int = 0
 
 
+class VirusTotalAnalysis(BaseModel):
+    available: bool = False
+    malicious: int = 0
+    suspicious: int = 0
+    harmless: int = 0
+    undetected: int = 0
+    total_engines: int = 0
+    detection_rate: float = 0.0
+    permalink: str | None = None
+    flagged_engines: list[str] = Field(default_factory=list)
+    score: int = 0
+
+
 class AnalysisRequest(BaseModel):
     url: HttpUrl
     html_content: str | None = None
@@ -69,13 +82,14 @@ class AnalysisResponse(BaseModel):
     domain: str
     risk_level: RiskLevel
     risk_score: int = Field(ge=0, le=100)
-    
+
     homograph: HomographAnalysis
     domain_age: DomainAgeAnalysis
     ssl: SSLAnalysis
     brand_similarity: BrandSimilarityAnalysis
     form_analysis: FormAnalysis | None = None
-    
+    virustotal: VirusTotalAnalysis | None = None
+
     analyzed_at: datetime
     recommendations: list[str] = Field(default_factory=list)
 
