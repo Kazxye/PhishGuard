@@ -2,14 +2,19 @@
 
 <div align="center">
 
+<!-- Replace with your generated banner image -->
+<!-- ![PhishGuard Banner](docs/banner.png) -->
+
 ![Python](https://img.shields.io/badge/Python-3.12+-3776AB?style=for-the-badge&logo=python&logoColor=white)
 ![FastAPI](https://img.shields.io/badge/FastAPI-0.115+-009688?style=for-the-badge&logo=fastapi&logoColor=white)
 ![TypeScript](https://img.shields.io/badge/TypeScript-5.0+-3178C6?style=for-the-badge&logo=typescript&logoColor=white)
+![React](https://img.shields.io/badge/React-18+-61DAFB?style=for-the-badge&logo=react&logoColor=black)
+![VirusTotal](https://img.shields.io/badge/VirusTotal-Integrated-394EFF?style=for-the-badge&logo=virustotal&logoColor=white)
 ![License](https://img.shields.io/badge/License-MIT-green?style=for-the-badge)
 
-**Real-time phishing detection system with browser extension and REST API**
+**Multi-layer phishing detection system with real-time browser protection and threat intelligence**
 
-[Features](#features) • [Installation](#installation) • [API Reference](#api-reference) • [Extension](#browser-extension) • [Contributing](#contributing)
+[Features](#features) · [Architecture](#architecture) · [Getting Started](#getting-started) · [API Reference](#api-reference) · [Extension](#browser-extension) · [Configuration](#configuration)
 
 </div>
 
@@ -17,246 +22,265 @@
 
 ## Overview
 
-PhishGuard is a multi-layer phishing detection system that analyzes URLs in real-time using five complementary detection techniques. It consists of a FastAPI backend service and a Chrome extension for seamless browser integration.
+PhishGuard is a real-time phishing detection platform that combines six complementary analysis techniques to identify malicious websites. It consists of a high-performance **FastAPI** backend running concurrent analysis pipelines and a **Chrome extension** that provides seamless, automatic protection during browsing.
+
+The system evaluates URLs through multiple security layers simultaneously — from Unicode homograph attacks to global threat intelligence via VirusTotal — producing a weighted risk score that reflects the combined findings of all engines.
 
 ## Features
 
-| Detection Method | Description |
-|-----------------|-------------|
-| **Homograph Detection** | Identifies Unicode characters that visually mimic ASCII letters (Cyrillic, Greek, etc.) |
-| **Domain Age Analysis** | Queries WHOIS data to flag newly registered domains |
-| **SSL Verification** | Validates certificate authenticity, expiration, and issuer |
-| **Brand Impersonation** | Detects typosquatting and similarity to 80+ known brands |
-| **Form Analysis** | Scans HTML for suspicious input patterns and external form actions |
+### Detection Engines
+
+| Engine | Weight | Description |
+|--------|--------|-------------|
+| **Homograph Detection** | 20% | Identifies Unicode characters (Cyrillic, Greek, fullwidth) that visually mimic ASCII letters in domain names |
+| **Domain Age Analysis** | 10% | Queries WHOIS data to flag newly registered domains, a common indicator of phishing campaigns |
+| **SSL Verification** | 10% | Validates certificate authenticity, expiration, issuer reputation, and encryption status |
+| **Brand Impersonation** | 25% | Detects typosquatting using Levenshtein distance against 80+ known brands with leet-speak substitution |
+| **Form Analysis** | 10% | Scans page HTML for suspicious input patterns, external form actions, and credential harvesting |
+| **VirusTotal** | 25% | Cross-references URLs against 70+ security engines for global threat intelligence |
+
+Weights are dynamically redistributed when optional engines (Form Analysis, VirusTotal) are unavailable. Combo multipliers amplify the score when multiple engines flag the same URL.
+
+### Extension
+
+- Real-time URL analysis on every navigation
+- Color-coded badge with risk score (green/yellow/orange/red)
+- Dark mode with 8 customizable accent themes
+- Analysis history (last 10 sites)
+- Domain whitelist management
+- Browser notifications for high-risk sites
+- Report suspicious sites
+- Configurable backend URL
 
 ## Architecture
 
 ```
-┌─────────────────────────────────────────────────────────────────┐
-│                     Chrome Extension                            │
-│  ┌─────────────┐  ┌─────────────┐  ┌─────────────────────────┐  │
-│  │  Content    │  │  Service    │  │      Popup UI           │  │
-│  │  Script     │──│  Worker     │──│   (React + Tailwind)    │  │
-│  └─────────────┘  └──────┬──────┘  └─────────────────────────┘  │
-└──────────────────────────┼──────────────────────────────────────┘
-                           │ REST API
-                           ▼
-┌─────────────────────────────────────────────────────────────────┐
-│                    PhishGuard API                               │
-│  ┌────────────────────────────────────────────────────────────┐ │
-│  │                     FastAPI                                │ │
-│  │  ┌───────────┐ ┌───────────┐ ┌───────────┐ ┌────────────┐  │ │
-│  │  │ Homograph │ │   WHOIS   │ │    SSL    │ │   Brand    │  │ │
-│  │  │ Detector  │ │  Service  │ │  Checker  │ │  Matcher   │  │ │
-│  │  └───────────┘ └───────────┘ └───────────┘ └────────────┘  │ │
-│  │  ┌───────────┐ ┌───────────┐ ┌──────────────────────────┐  │ │
-│  │  │   Form    │ │   Risk    │ │     Cache Service        │  │ │
-│  │  │ Analyzer  │ │Calculator │ │    (In-Memory + TTL)     │  │ │
-│  │  └───────────┘ └───────────┘ └──────────────────────────┘  │ │
-│  └────────────────────────────────────────────────────────────┘ │
-└─────────────────────────────────────────────────────────────────┘
+┌──────────────────────────────────────────────────────────────────────┐
+│                        Chrome Extension (MV3)                        │
+│                                                                      │
+│  ┌──────────────┐  ┌───────────────┐  ┌───────────────────────────┐  │
+│  │   Content     │  │   Service     │  │       Popup UI            │  │
+│  │   Script      │──│   Worker      │──│   (React + Tailwind)      │  │
+│  │ (DOM Extract) │  │ (Orchestrator)│  │                           │  │
+│  └──────────────┘  └───────┬───────┘  └───────────────────────────┘  │
+└────────────────────────────┼─────────────────────────────────────────┘
+                             │ REST API (async)
+                             ▼
+┌──────────────────────────────────────────────────────────────────────┐
+│                       PhishGuard API (FastAPI)                        │
+│                                                                      │
+│  ┌────────────────────────────────────────────────────────────────┐  │
+│  │                    asyncio.gather (parallel)                    │  │
+│  │                                                                │  │
+│  │  ┌───────────┐ ┌───────────┐ ┌───────────┐ ┌───────────────┐  │  │
+│  │  │ Homograph │ │   WHOIS   │ │    SSL    │ │    Brand      │  │  │
+│  │  │ Detector  │ │  Service  │ │  Checker  │ │   Matcher     │  │  │
+│  │  │  (sync*)  │ │  (sync*)  │ │  (sync*)  │ │   (sync*)     │  │  │
+│  │  └───────────┘ └───────────┘ └───────────┘ └───────────────┘  │  │
+│  │  ┌───────────┐ ┌───────────┐                                  │  │
+│  │  │   Form    │ │ VirusTotal│  * = wrapped in asyncio.to_thread │  │
+│  │  │ Analyzer  │ │  (async)  │                                  │  │
+│  │  │  (sync*)  │ │  (httpx)  │                                  │  │
+│  │  └───────────┘ └───────────┘                                  │  │
+│  └────────────────────────────────────────────────────────────────┘  │
+│                                                                      │
+│  ┌───────────────┐  ┌──────────────────────────────────────────┐    │
+│  │     Risk      │  │          Cache Service                    │    │
+│  │  Calculator   │  │  (In-Memory + TTL per service)            │    │
+│  └───────────────┘  └──────────────────────────────────────────┘    │
+└──────────────────────────────────────────────────────────────────────┘
 ```
 
-## Installation
+All detection engines run concurrently via `asyncio.gather`. Synchronous services (WHOIS, SSL, Homograph, Brand) are offloaded to threads with `asyncio.to_thread`, while VirusTotal uses native async HTTP via `httpx`. This reduces total response time to the duration of the slowest engine rather than the sum of all.
 
-### Backend (API)
+## Getting Started
+
+### Prerequisites
+
+- Python 3.12+
+- Node.js 18+
+- Google Chrome
+- VirusTotal API key ([free registration](https://www.virustotal.com/gui/join-us)) — optional but recommended
+
+### Backend
 
 ```bash
-# Clone the repository
-git clone https://github.com/yourusername/phishguard.git
-cd phishguard/backend
+git clone https://github.com/Kazxye/PhishGuard.git
+cd PhishGuard/backend
 
-# Create virtual environment
+# Create and activate virtual environment
 python -m venv venv
-source venv/bin/activate  # Windows: venv\Scripts\activate
+source venv/bin/activate        # Linux/macOS
+.\venv\Scripts\Activate.ps1     # Windows PowerShell
 
 # Install dependencies
 pip install -r requirements.txt
 
-# Copy environment variables
+# Configure environment
 cp .env.example .env
+# Edit .env and add your VIRUSTOTAL_API_KEY
 
-# Run the server
+# Start the server
 uvicorn app.main:app --reload
 ```
 
-The API will be available at `http://localhost:8000`
+API available at `http://localhost:8000` | Swagger docs at `http://localhost:8000/docs`
 
-### Using Docker
+### Chrome Extension
+
+```bash
+cd PhishGuard/extension
+
+npm install
+npm run build
+```
+
+1. Open `chrome://extensions/`
+2. Enable **Developer mode**
+3. Click **Load unpacked** and select the `dist/` folder
+
+The extension will automatically analyze every HTTP/HTTPS page you visit.
+
+### Docker
 
 ```bash
 cd backend
 docker build -t phishguard-api .
-docker run -p 8000:8000 phishguard-api
+docker run -p 8000:8000 --env-file .env phishguard-api
 ```
+
+## Configuration
+
+All settings are managed through environment variables in `backend/.env`:
+
+| Variable | Default | Description |
+|----------|---------|-------------|
+| `VIRUSTOTAL_API_KEY` | _(empty)_ | VirusTotal API key. Leave empty to disable VT engine |
+| `VIRUSTOTAL_TIMEOUT` | `10` | Timeout in seconds for VT API calls |
+| `DOMAIN_AGE_THRESHOLD_DAYS` | `30` | Domains newer than this are flagged |
+| `SIMILARITY_THRESHOLD` | `0.75` | Minimum Levenshtein ratio to flag brand similarity |
+| `WHOIS_TIMEOUT` | `10` | Timeout for WHOIS queries |
+| `SSL_TIMEOUT` | `5` | Timeout for SSL certificate checks |
+| `CACHE_TTL_WHOIS` | `3600` | WHOIS cache duration (seconds) |
+| `CACHE_TTL_SSL` | `300` | SSL cache duration (seconds) |
+| `CACHE_TTL_VIRUSTOTAL` | `900` | VirusTotal cache duration (seconds) |
+| `CORS_ORIGINS_STR` | `*` | Allowed CORS origins (comma-separated) |
 
 ## API Reference
-
-### Health Check
-
-```http
-GET /api/v1/health
-```
-
-**Response:**
-```json
-{
-  "status": "healthy",
-  "version": "1.0.0",
-  "timestamp": "2024-01-01T00:00:00Z"
-}
-```
 
 ### Analyze URL
 
 ```http
 POST /api/v1/analyze
 Content-Type: application/json
-
-{
-  "url": "https://example.com",
-  "html_content": "<html>...</html>"  // Optional
-}
 ```
 
-**Response:**
 ```json
 {
   "url": "https://example.com",
-  "domain": "example.com",
-  "risk_level": "safe",
-  "risk_score": 15,
-  "homograph": {
-    "has_homographs": false,
-    "suspicious_characters": [],
-    "score": 0
-  },
-  "domain_age": {
-    "creation_date": "2015-03-14T00:00:00Z",
-    "age_days": 3500,
-    "is_new_domain": false,
-    "score": 0
-  },
-  "ssl": {
-    "has_ssl": true,
-    "is_valid": true,
-    "issuer": "DigiCert Inc",
-    "score": 0
-  },
-  "brand_similarity": {
-    "matches": [],
-    "highest_similarity": 0.0,
-    "is_suspicious": false,
-    "score": 0
-  },
-  "recommendations": ["No significant threats detected."],
-  "analyzed_at": "2024-01-01T12:00:00Z"
+  "html_content": "<html>...</html>"
 }
 ```
 
+The `html_content` field is optional. When provided (automatically by the Chrome extension content script), it enables the Form Analysis engine.
+
 ### Risk Levels
 
-| Level | Score Range | Description |
-|-------|-------------|-------------|
+| Level | Score | Description |
+|-------|-------|-------------|
 | `safe` | 0-19 | No significant threats detected |
 | `low` | 20-39 | Minor anomalies, proceed with caution |
 | `medium` | 40-59 | Multiple risk indicators present |
 | `high` | 60-79 | Strong indicators of phishing |
 | `critical` | 80-100 | Highly likely phishing attempt |
 
-## Browser Extension
+### Other Endpoints
 
-See [extension/README.md](extension/README.md) for installation and usage instructions.
+| Method | Endpoint | Description |
+|--------|----------|-------------|
+| `GET` | `/api/v1/health` | Service health check |
+| `GET` | `/api/v1/brands` | List monitored brands and categories |
 
-### Quick Start
+Full interactive documentation available at `/docs` (Swagger) or `/redoc`.
 
-```bash
-cd extension
+## Project Structure
 
-# Install dependencies
-npm install
-
-# Generate icons (open in browser)
-# Open public/icons/generate-icons.html and download the icons
-
-# Build
-npm run build
-
-# Load in Chrome: chrome://extensions/ → Load unpacked → select dist/
 ```
-
-### Extension Features
-
-- 🔍 Real-time URL analysis on navigation
-- 🎨 Color-coded badge (green/yellow/red)
-- 🌙 Dark mode support
-- 📋 History of last 10 analyses
-- ✅ Whitelist for trusted domains
-- 🔔 Notifications for high-risk sites
-- 🚩 Report suspicious sites
+PhishGuard/
+├── backend/
+│   ├── app/
+│   │   ├── api/                  # REST endpoints
+│   │   │   └── routes.py         # Async analysis pipeline
+│   │   ├── models/
+│   │   │   └── schemas.py        # Pydantic models (request/response)
+│   │   ├── services/
+│   │   │   ├── homograph_detector.py
+│   │   │   ├── whois_service.py
+│   │   │   ├── ssl_checker.py
+│   │   │   ├── brand_matcher.py
+│   │   │   ├── form_analyzer.py
+│   │   │   ├── virustotal_service.py
+│   │   │   ├── risk_calculator.py
+│   │   │   └── cache_service.py
+│   │   ├── data/
+│   │   │   └── known_brands.py   # 80+ brand definitions
+│   │   ├── config.py             # Pydantic settings
+│   │   └── main.py               # App factory
+│   ├── tests/
+│   ├── Dockerfile
+│   ├── requirements.txt
+│   └── .env.example
+│
+├── extension/
+│   ├── src/
+│   │   ├── background/           # Service worker (analysis orchestration)
+│   │   ├── content/              # DOM analyzer (form extraction)
+│   │   ├── popup/                # React UI (gauge, history, settings)
+│   │   └── shared/               # Types, API client, storage, constants
+│   ├── public/
+│   │   └── manifest.json         # Chrome MV3 manifest
+│   ├── package.json
+│   └── vite.config.ts
+│
+└── README.md
+```
 
 ## Development
 
 ### Running Tests
 
 ```bash
-# Install dev dependencies
+cd backend
 pip install -r requirements-dev.txt
 
-# Run tests with coverage
 pytest --cov=app --cov-report=html
-
-# Run specific test file
 pytest tests/test_homograph.py -v
 ```
 
 ### Code Quality
 
 ```bash
-# Format code
 ruff format app tests
-
-# Lint
 ruff check app tests --fix
-```
-
-## Project Structure
-
-```
-phishguard/
-├── backend/
-│   ├── app/
-│   │   ├── api/            # REST endpoints
-│   │   ├── models/         # Pydantic schemas
-│   │   ├── services/       # Business logic
-│   │   └── data/           # Static data (brands list)
-│   ├── tests/              # Unit tests
-│   ├── Dockerfile
-│   └── requirements.txt
-│
-├── extension/              # Chrome extension
-│   ├── src/
-│   │   ├── background/     # Service worker
-│   │   ├── content/        # DOM analyzer
-│   │   └── popup/          # React UI
-│   └── manifest.json
-│
-└── README.md
 ```
 
 ## Security Considerations
 
-- The API does not store analyzed URLs or user data
-- WHOIS queries are cached to prevent rate limiting abuse
-- SSL certificate validation follows industry standards
-- Brand matching uses local comparison (no external API calls)
+- No URL or user data is persisted — all analysis is stateless
+- WHOIS, SSL, and VirusTotal responses are cached in-memory with TTL to prevent rate limiting
+- SSL validation follows industry standards via Python ssl module
+- Brand matching runs locally with no external API calls
+- VirusTotal integration uses API key authentication over HTTPS
+- The extension requests minimal Chrome permissions
 
 ## Roadmap
 
-- [ ] Machine learning model for content analysis
-- [ ] Firefox extension support
-- [ ] Real-time threat feed integration
-- [ ] Dashboard for threat analytics
+- [ ] Machine learning model for content classification
+- [ ] Firefox extension (WebExtensions API)
+- [ ] Internationalization (PT-BR / EN)
+- [ ] Threat analytics dashboard
+- [ ] Blocklist with custom block page
+- [ ] Report endpoint with persistence
 
 ## License
 
@@ -265,5 +289,9 @@ This project is licensed under the MIT License. See [LICENSE](LICENSE) for detai
 ---
 
 <div align="center">
-  <sub>Built with security in mind</sub>
+
+**Built with security in mind**
+
+[Report a Bug](https://github.com/Kazxye/PhishGuard/issues) · [Request a Feature](https://github.com/Kazxye/PhishGuard/issues)
+
 </div>
