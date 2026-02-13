@@ -94,7 +94,7 @@ export interface StorageData {
 }
 
 export interface MessageRequest {
-  type: "ANALYZE_URL" | "GET_ANALYSIS" | "REPORT_SITE" | "UPDATE_SETTINGS";
+  type: "ANALYZE_URL" | "GET_ANALYSIS" | "REPORT_SITE" | "UPDATE_SETTINGS" | "PAGE_HAS_FORMS" | "EXTRACT_PAGE_DATA";
   payload?: unknown;
 }
 
